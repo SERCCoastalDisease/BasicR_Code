@@ -1,0 +1,25 @@
+#importing files from excel document and converting them so appropriate to merge into a phyloseq object
+otu_mat_genus<- as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All_merged_parasite_OTU_tables.xlsx", sheet = "genusbinary_otu"))
+tax_mat_genus<- as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All_merged_parasite_OTU_tables.xlsx", sheet = "genusbinary_taxa"))
+sample_df = as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All_merged_parasite_OTU_tables.xlsx", sheet = "all_datatable"))
+
+#Change to row name and remove column name
+row.names(otu_mat_genus) <- otu_mat_genus$OTU.ID
+otu_mat_genus <- otu_mat_genus %>% select (-OTU.ID)
+row.names(otu_mat_genus_abund) <- otu_mat_genus_abund$OTU.ID
+otu_mat_genus_abund <- otu_mat_genus_abund %>% select (-OTU.ID)
+row.names(tax_mat_genus) <- tax_mat_genus$OTU.ID
+tax_mat_genus <- tax_mat_genus %>% select (-OTU.ID)
+row.names(sample_df) <- sample_df$samples
+sample_df <- sample_df %>% select (-samples) 
+
+#transform to matrixes
+otu_mat_genus2 <- data.matrix(otu_mat_genus)
+tax_mat_genus2 = as.matrix(tax_mat_genus)
+otu_mat_genus_abund2 <- data.matrix(otu_mat_genus_abund)
+
+#Transform to phyloseq objects
+OTUgenusbin = otu_table(otu_mat_genus2, taxa_are_rows = TRUE)
+TAXgenus = tax_table(tax_mat_genus2)
+samples = sample_data(sample_df)
+allgenusbin = merge_phyloseq(OTUgenusbin, TAXgenus, samples)
