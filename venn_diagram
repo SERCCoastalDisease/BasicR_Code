@@ -1,0 +1,43 @@
+#Following example at: https://github.com/hallamlab/mp_tutorial/wiki/Introduction-to-Downstream-Analysis-in-R
+#This is not done with phyloseq objects, but with the original files, so that is what I'm using
+#Using Venn Diagram package to create this
+
+
+merge_allparotus_sample = merge(otu_mat_genus2t, sample_df, by="row.names")
+row.names(merge_allparotus_sample)
+head(merge_allparotus_sample)
+ncol(merge_allparotus_sample)#139 -- should be 136 taxa, so 3 extra cols looks right
+row.names(merge_allparotus_sample) <- merge_allparotus_sample$Row.names
+which(merge_allparotus_sample$Region=="Virginia")
+Virginia <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[1:82,]) > 0]
+which(merge_allparotus_sample$Region=="Alaska")
+Alaska <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[169:243,]) > 0]
+which(merge_allparotus_sample$Region=="Texas")
+Texas <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[83:168,]) > 0]
+
+merge_allparotus_sample_dataset = merge_allparotus_sample[order(merge_allparotus_sample$Dataset),]
+write.csv(merge_allparotus_sample_dataset, file = "~/Desktop/merge_allparotus_sample_dataset.csv")
+which(merge_allparotus_sample_dataset$Dataset=="03um")
+um3 <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[1:61,]) > 0]
+which(merge_allparotus_sample_dataset$Dataset=="35um")
+um35 <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[62:167,]) > 0]
+which(merge_allparotus_sample_dataset$Dataset=="80um")
+um80 <- colnames(otu_mat_genus2t)[colSums(otu_mat_genus2t[168:243,]) > 0]
+
+venn_allpar_Region <- venn_diagram3(Virginia, Alaska, Texas, "Virginia", "Alaska","Texas", colors= c("red","green","blue"))
+# $Virginia_Texas
+# [1] "T96"  "T101" "T110" "T112" "T120" "T123" "T127" "T128" "T130" "T131" "T132" "T133" "T134"
+# [14] "T137"
+# $Alaska_Texas
+# [1] "T99"  "T105" "T107"
+# $Virginia_Alaska_Texas
+# [1] "T97"  "T100" "T103" "T104" "T109" "T113" "T114" "T115" "T122" "T124" "T125" "T129" "T135"
+# [14] "T138" "T139"
+venn_allpar_Dataset <- venn_diagram3(um3, um35, um80, "03uM", "35uM","80uM", colors= c("red","green","blue"))
+#$`03uM_35uM`
+# [1] "T96"  "T101" "T110" "T112" "T120" "T123" "T127" "T130" "T131" "T132" "T133" "T134"
+# $`35uM_80uM`
+# [1] "T99"  "T105" "T107"
+# $`03uM_35uM_80uM`
+# [1] "T97"  "T100" "T103" "T104" "T109" "T113" "T114" "T115" "T122" "T124" "T125" "T129" "T135"
+# [14] "T138" "T139"
