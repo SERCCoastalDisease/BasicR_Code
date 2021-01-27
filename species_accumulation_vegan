@@ -1,0 +1,80 @@
+#To make species accumulation curves in vegan
+#first need to separately save the otu_table and veganize it
+#This page: https://joey711.github.io/phyloseq-demo/phyloseq-demo-slides.html, shows how to find the following function that can be used to convert phyloseq datasets to 
+#use in vegan
+veganotu <- function(physeq) {
+  require("vegan")
+  OTU <- otu_table(physeq)
+  if (taxa_are_rows(OTU)) {
+    OTU <- t(OTU)
+  }
+  return(as(OTU, "matrix"))
+}
+
+otu_mat_genus2_veg = veganotu(otu_table(allgenusabund))
+head(otu_mat_genus2_veg)
+sac_allpargenabund <- specaccum(otu_mat_genus2_veg, method = "random")
+#just to check these before making pdf
+plot(sac_allpargenabund) 
+#Need to make subsets of the data for each region to run those subsets separately
+#Going to use the subset function to get subsets of the data for each region 
+VA = subset_samples(allgenusabund, Region == "Virginia")
+otu_table(VA)
+TX = subset_samples(allgenusabund, Region == "Texas")
+otu_table(TX)
+AK = subset_samples(allgenusabund, Region == "Alaska")
+otu_table(AK)
+
+#transpose the OTU tables so in vegan format
+VAotu_veg = veganotu(otu_table(VA))
+TXotu_veg = veganotu(otu_table(TX))
+AKotu_veg = veganotu(otu_table(AK))
+#to run accumulation curves for the subsets of data so I can make two separate figures
+sacVAotu <- specaccum(VAotu_veg, method = "random")
+sacAKotu <- specaccum(AKotu_veg , method = "random")
+sacTXotu <- specaccum(TXotu_veg , method = "random")
+plot(sacVAotu)
+plot(sacAKotu)
+plot(sacTXotu)
+
+protist = subset_samples(allgenusabund, Dataset == "03um")
+otu_table(protist)
+zoop35 = subset_samples(allgenusabund, Dataset == "35um")
+otu_table(zoop35)
+zoop80 = subset_samples(allgenusabund, Dataset == "80um")
+otu_table(zoop80)
+
+#transpose the OTU tables so in vegan format
+protist_veg = veganotu(otu_table(protist))
+zoop35_veg = veganotu(otu_table(zoop35))
+zoop80_veg = veganotu(otu_table(zoop80))
+#to run accumulation curves for the subsets of data so I can make two separate figures
+sac_protist <- specaccum(protist_veg, method = "random")
+sac_zoop35 <- specaccum(zoop35_veg , method = "random")
+sac_zoop80 <- specaccum(zoop80_veg , method = "random")
+plot(sac_protist)
+plot(sac_zoop35)
+plot(sac_zoop80)
+
+
+pdf("SpecAccum_allparasites_nonnorm_genus_region_Aug2020.pdf", width =5, height = 5)
+par(omi=c(0.40,0.25,0.40,0.25))
+layout(matrix(c(1,2,3,4), byrow=TRUE, ncol=2), heights=c(2,2), widths=c(2,2))
+par(mar=c(3,4,1,1), las=1)
+plot(sac_allpargenabund, yaxs="i", ylim=c(0,150),ann=FALSE, xlim=c(0, 250),xaxs="i")
+text(0.1,140, labels="A. All",cex=1, pos=4)
+par(mar=c(3,4,1,1), las=1)
+plot(sacVAotu, yaxs="i", ylim=c(0,120),ann=FALSE, xlim=c(0,100),xaxs="i")
+text(0.1,110, labels="B. Virginia",cex=1, pos=4)
+par(mar=c(3,4,1,1), las=1)
+plot(sacAKotu, yaxs="i", ylim=c(0,120), ann=FALSE, xlim=c(0,100), xaxs="i")
+text(0.1,110, labels="C. Alaska",cex=1, pos=4)
+par(mar=c(3,4,1,1), las=1)
+plot(sacTXotu, yaxs="i", ylim=c(0,120), ann=FALSE, xlim=c(0,100), xaxs="i")
+text(0.1,110, labels="D. Texas",cex=1, pos=4)
+par(mar=c(3,4,1,1), las=1)
+par(las=0)
+mtext("Number of OTUs", side=2, outer=TRUE, cex=1, line=0)
+par(las=1)
+mtext("Number of Samples", side=1, outer=TRUE, cex=1, line=0)
+dev.off()
