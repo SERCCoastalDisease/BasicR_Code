@@ -1,0 +1,9 @@
+#This theme setting removes the annoying black lines that come up with the default settings
+th <- theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            legend.position="right", panel.border = element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            panel.grid.major.x = element_blank(),
+            panel.grid.minor.x = element_blank(),
+            axis.ticks.x=element_blank(), axis.text=element_text(color="black", size=8, angle=90),
+            text = element_text(size=20))
