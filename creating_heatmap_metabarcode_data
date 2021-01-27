@@ -1,0 +1,195 @@
+install.packages("readxl")
+library(readxl)
+install.packages("dplyr")
+library(dplyr)
+
+setwd('/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020')
+#Based on feedback from Sarah, I normalized the datasets by dividing the number of sequences per OTU per sample
+#in the parasite dataset by the total number of sequences per sample in hte original dataset
+
+#Followed: https://vaulot.github.io/tutorials/Phyloseq_tutorial.html
+otu_mat<- as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_80parasites_REDOJune20.xlsx", sheet = "out_table_norm"))
+tax_mat<- as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_80parasites_REDOJune20.xlsx", sheet = "taxa_table"))
+sample_df = as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_80parasites_REDOJune20.xlsx", sheet = "sample_name"))
+#For VMT57 and VMT58, which each had 10 plankton tows per tank, I removed tows 2-10 and only kept the first tow for each
+otu_mat_35=as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_35um_REDOJune2020.xlsx", sheet = "35um_otus_norm"))
+tax_mat_35=as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_35um_REDOJune2020.xlsx", sheet = "35uM_tax"))
+sample_df_35=as.data.frame(read_excel("/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/All18S_35um_REDOJune2020.xlsx", sheet = "35uM_samples2"))
+
+#Change to row name and remove column name
+row.names(otu_mat) <- otu_mat$OTU_ID
+otu_mat <- otu_mat %>% select (-OTU_ID)
+row.names(tax_mat) <- tax_mat$OTU_ID
+tax_mat <- tax_mat %>% select (-OTU_ID)
+row.names(sample_df) <- sample_df$samples
+sample_df <- sample_df %>% select (-samples) 
+#For 35uM_Change to row name and remove column name
+row.names(otu_mat_35) <- otu_mat_35$OTU_ID
+otu_mat_35 <- otu_mat_35 %>% select (-OTU_ID)
+row.names(tax_mat_35) <- tax_mat_35$OTU_ID
+tax_mat_35 <- tax_mat_35 %>% select (-OTU_ID)
+row.names(sample_df_35) <- sample_df_35$samples
+sample_df_35 <- sample_df_35 %>% select (-samples) 
+#transform to matrixes
+otu_mat2 <- data.matrix(otu_mat)
+otu_mat2_35 <- data.matrix(otu_mat_35)
+
+#checking to see if any columns have sums = 0, which means that there are samples included that have no parasites
+i35 <- (colSums(otu_mat2_35, na.rm=T) != 0)
+i <- (colSums(otu_mat2, na.rm=T) != 0)
+#remove those columns with sum = 0, so removing all samples that don't have parasites
+otu_mat3 =  otu_mat2[, i]
+sort(colSums(otu_mat3))
+otu_mat3_35 =  otu_mat2_35[, i35]
+sort(colSums(otu_mat3_35))
+#Because I removed those replicates, there are otus listed that are not represented by sequences, so I need to remove those too
+otumat4 = otu_mat3[rowSums(otu_mat3)!=0,]
+sort(rowSums(otumat4))
+#tax_mat2 <- as.matrix(tax_mat)#Because I removed those replicates, there are otus listed that are not represented by sequences, so I need to remove those too
+
+otumat4_35 = otu_mat3_35[rowSums(otu_mat3_35)!=0,]
+sort(rowSums(otumat4_35))
+#tax_mat2_35 <- as.matrix(tax_mat_35)#Because I removed those replicates, there are otus listed that are not represented by sequences, so I need to remove those too
+
+#Transform to phyloseq objects
+OTU = otu_table(otumat4, taxa_are_rows = TRUE)
+TAX = tax_table(tax_mat2)
+samples = sample_data(sample_df)
+SSU_80_phyloseq = merge_phyloseq(OTU, TAX, samples)
+
+OTU_35 = otu_table(otumat4_35, taxa_are_rows = TRUE)
+TAX_35 = tax_table(tax_mat2_35)
+samples_35 = sample_data(sample_df_35)
+SSU35_phyloseq = merge_phyloseq(OTU_35, TAX_35, samples_35)
+
+sample_names(SSU_80_phyloseq)
+rank_names(SSU_80_phyloseq)
+sample_variables(SSU_80_phyloseq)
+
+sample_names(SSU35_phyloseq)
+rank_names(SSU35_phyloseq)
+sample_variables(SSU35_phyloseq)
+
+#For80
+ntaxa(SSU_80_phyloseq)#98
+nsamples(SSU_80_phyloseq)#76
+#sum of sequences per sample
+sample_sums(SSU_80_phyloseq)
+#sum of all sequences in the dataset
+sum(sample_sums(SSU_80_phyloseq)) #results = 22565, normalized dataset = 0.4324314
+#filter samples with < 100 sequences out of the dataset
+SSU_80_phyloseq_highabund = subset_samples(SSU_80_phyloseq, sample_sums(SSU_80_phyloseq)>100, prune=TRUE)
+sample_sums(SSU_80_phyloseq_highabund)
+nsamples(SSU_80_phyloseq_highabund) #22 samples with >100 sequences,  samples have <100 sequences
+nsamples(SSU_80_phyloseq) - nsamples(SSU_80_phyloseq_highabund)#54
+
+#for35
+ntaxa(SSU35_phyloseq)#115
+nsamples(SSU35_phyloseq)#106
+#sum of sequences per sample
+sample_sums(SSU35_phyloseq)
+#sum of all sequences in the dataset
+sum(sample_sums(SSU35_phyloseq)) #results = 60209, for normalized dataset=1.531137
+#filter samples with < 100 sequences out of the dataset
+SSU35_phyloseq_highabund = subset_samples(SSU35_phyloseq, sample_sums(SSU35_phyloseq)>100, prune=TRUE)
+sample_sums(SSU35_phyloseq_highabund)
+nsamples(SSU35_phyloseq_highabund) #39 samples with >100 sequences, 67 samples have <100 sequences
+nsamples(SSU35_phyloseq)-nsamples(SSU35_phyloseq_highabund) 
+#To create heatmap with numbers
+#merge the otu_table in the phyloseq object by Region
+#This command takes the variable region, removes it, and replaces the sample names with the Region, in order
+#for this to work, there must be a dummy variable so that when the Region variable is removed there is still something present
+sample_data(SSU_80_phyloseq)$dummy_var <- 1
+mergedSSU80 = merge_samples(SSU_80_phyloseq, "Region")
+sample_names(mergedSSU80)
+merged80tax=tax_table(mergedSSU80)
+#write.csv(merged80tax, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/mergeSSU80_taxa.csv")
+#looked at the above to see if the merge makes sense and all the names are accurate -- looks like they are
+sum(sample_sums(mergedSSU80))#22565, matches above for original phyloseq object
+# for 35_To create heatmap with numbers
+#merge the otu_table in the phyloseq object by Region
+#This command takes the variable region, removes it, and replaces the sample names with the Region, in order
+#for this to work, there must be a dummy variable so that when the Region variable is removed there is still something present
+sample_data(SSU35_phyloseq)$dummy_var <- 1
+mergedSSU35 = merge_samples(SSU35_phyloseq, "Region")
+sample_names(mergedSSU35)
+merged35tax=tax_table(mergedSSU35)
+#write.csv(merged35tax, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/mergeSSU35_taxa.csv")
+sum(sample_sums(mergedSSU35))#60209, matches above for original phyloseq object
+#To merge the taxonomic names
+#first print the available taxonomic categories
+colnames(tax_table(mergedSSU35))
+#agglomerate at the genus level
+mergedSSU80_all <- tax_glom(mergedSSU80, taxrank="GENUS", NArm = FALSE)
+
+nsamples(mergedSSU80_all)#3 -- now only the Regions
+ntaxa(mergedSSU80_all)#45 --how do I see them?
+mergedSSU80_alltax=tax_table(mergedSSU80_all)
+#write.csv(mergedSSU80_alltax, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/mergeSSU80genus_taxa.csv")
+sum(sample_sums(mergedSSU80_all))#22565
+#for35
+#agglomerate at the genus level
+mergedSSU35_all <- tax_glom(mergedSSU35, taxrank="GENUS", NArm = FALSE)
+nsamples(mergedSSU35_all)#3 -- now only the Regions
+ntaxa(mergedSSU35_all)#42 --how do I see them?
+mergedSSU35_alltax=tax_table(mergedSSU35_all)
+#write.csv(mergedSSU35_alltax, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/mergeSSU35genus_taxa.csv")
+sum(sample_sums(mergedSSU35_all))#60209
+
+#To create an OTU table that I can make into the type of heatmap I want to see...
+otus_merge = otu_table(mergedSSU80_all)
+otus_merge_35 = otu_table(mergedSSU35_all)
+#Need to transpose the otu table first
+otus_merge_t = t(otus_merge)
+otus_merge_t35 = t(otus_merge_35)
+#Convert both of these files to dataframes so I can easily manipulate them
+otus_merge_t_df = as.data.frame(otu_table(otus_merge_t))
+taxa_names_merge= as.data.frame(tax_table(mergedSSU80_all))
+otus_merge_t_df35 = as.data.frame(otu_table(otus_merge_t35))
+taxa_names_merge35= as.data.frame(tax_table(mergedSSU35_all))
+#Though these look like columns, they are actually row names because that is how phyloseq objects are labeled
+rownames(otus_merge_t_df)
+rownames(taxa_names_merge)
+head(otus_merge_t_df)
+nrow(otus_merge_t_df)
+head(taxa_names_merge) 
+nrow(taxa_names_merge)
+
+rownames(otus_merge_t_df35)
+rownames(taxa_names_merge35)
+head(otus_merge_t_df35)
+nrow(otus_merge_t_df35)
+head(taxa_names_merge35) 
+nrow(taxa_names_merge35)
+#merge the two files into 1 based on the rownames, which = the OTUs
+merge_otus_tax = merge(taxa_names_merge, otus_merge_t_df, by="row.names")
+head(merge_otus_tax)
+nrow(merge_otus_tax)
+
+
+merge_otus_tax35 = merge(taxa_names_merge35, otus_merge_t_df35, by="row.names")
+head(merge_otus_tax35)
+nrow(merge_otus_tax35)
+#Now I need to merge the taxonomy string into a single column
+#first add a new column
+merge_otus_tax$taxonomy <- paste(merge_otus_tax$KINGDOM, merge_otus_tax$PHYLUM, merge_otus_tax$CLASS, merge_otus_tax$ORDER,merge_otus_tax$FAMILY, merge_otus_tax$GENUS, sep = ";")
+head(merge_otus_tax)
+#write.csv(merge_otus_tax, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/merge80_otus_taxa.csv")
+
+#remove columns I don't need, which are 1-8
+merge_otus_tax1 = subset.data.frame(merge_otus_tax, select = -c(KINGDOM,PHYLUM,CLASS,ORDER,FAMILY,GENUS,SPECIES))
+head(merge_otus_tax1)
+
+#Now I need to merge the taxonomy string into a single column
+#first add a new column
+merge_otus_tax35$taxonomy <- paste(merge_otus_tax35$KINGDOM, merge_otus_tax35$PHYLUM, merge_otus_tax35$CLASS, merge_otus_tax35$ORDER,merge_otus_tax35$FAMILY, merge_otus_tax35$GENUS, sep = ";")
+head(merge_otus_tax35)
+write.csv(merge_otus_tax35, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/merge35_otus_taxa.csv")
+#remove columns I don't need, which are 1-8
+merge_otus_tax135 = subset.data.frame(merge_otus_tax35, select = -c(KINGDOM,PHYLUM,CLASS,ORDER,FAMILY,GENUS,SPECIES))
+head(merge_otus_tax135)
+
+#Now to put both tables together for the final heatmap
+merge_otus_tax3580 = merge(merge_otus_tax135, merge_otus_tax1, by="taxonomy", all.x = TRUE)
+head(merge_otus_tax3580)
+write.csv(merge_otus_tax3580, file ="/Users/KMP/Dropbox (Smithsonian)/BW_Zoop_EPA_Data/Parasite_Analysis_redoJune2020/merge_otus_3580_forheatmap.csv")
