@@ -1,0 +1,8 @@
+library(phyloseq)
+library(ape)
+library(vegan)
+library(ggplot2)
+library(picante)
+library(plyr)
+library(readxl)
+library(dplyr)
