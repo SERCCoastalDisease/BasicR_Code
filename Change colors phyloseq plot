@@ -1,0 +1,22 @@
+#This code allows you to change the colorscheme of the phyloseq object, which requires saving the phyloseq object as a data frame and then building the
+#plot in ggplot2
+HowManyOrder = ntaxa(allorderbin)
+#Then I build a colour palette with number of colours as many as the Phyla in my samples, 
+#by interpolating the palette "Paired", one of the colorblind friendly palettes. there are others!
+getPalette = colorRampPalette(brewer.pal(12, "Paired")) 
+OrderPalette = getPalette(HowManyOrder)
+#I get the data frame from the phyloseq object
+allorderbin_pd <- psmelt(allorderbin)
+#And then I do the actual plotting
+barchart_palette <- ggplot(allorderbin_pd, aes(x = Dataset, y = Abundance, factor(Order), 
+                    fill = factor(Order))) + geom_bar(stat = "identity") + scale_fill_manual(values = OrderPalette)
+                    + guides(fill=guide_legend(ncol=2)) 
+th <- theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+            panel.background = element_blank(), axis.line = element_line(colour = "black"),
+            legend.position="right", panel.border = element_blank(),
+            plot.title = element_text(hjust = 0.5),
+            panel.grid.major.x = element_blank(),
+            panel.grid.minor.x = element_blank(),
+            axis.ticks.x=element_blank(), axis.text=element_text(color="black", size=8, angle=90),
+            text = element_text(size=14))
+barchart_palette+th
