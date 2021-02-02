@@ -1,0 +1,11 @@
+#Create vector of colors for use, with the number of colors needed for your plot
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+mycolors=sample(col_vector, 10)
+
+#use that vector in the below scale_fill_manual and scale_color_manual to change the color scheme in the phyloseq object plotted in ggplot2
+plot_bar(DE_100,  fill="Phylum") +
+geom_bar(aes(color=Phylum, fill=Phylum), stat="identity", position="stack")+
+facet_grid(Experiment~., scales = "free_x")+
+scale_fill_manual(values=mycolors)+
+scale_color_manual(values=mycolors)
