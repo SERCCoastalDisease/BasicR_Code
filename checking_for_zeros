@@ -17,6 +17,6 @@ sort(colSums(otu_mat3_35))
 otu_mat3_35norm =  otu_mat_35_norm2[, i35_norm]
 sort(colSums(otu_mat3_35norm))
 
-#Because I removed those replicates, there are otus listed that are not represented by sequences, so I need to remove those too
+#Removing samples that have zero sequences
 otumat4 = otu_mat3[rowSums(otu_mat3)!=0,]
 sort(rowSums(otumat4))
