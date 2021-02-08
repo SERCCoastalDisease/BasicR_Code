@@ -1,9 +1,13 @@
-#checking to see if any columns have sums = 0, which means that there are samples included that have no parasites
+#To see which samples have no sequences in them
+rowSums(otu_table(RK_otu))#this works if RK_otu is a phyloseq object, but is not necessary if it is not
+
+#checking to see if any columns have sums = 0
 i35 <- (colSums(otu_mat2_35, na.rm=T) != 0)
 i <- (colSums(otu_mat2, na.rm=T) != 0)
 i35_norm <- (colSums(otu_mat_35_norm2, na.rm=T) != 0)
 i85_norm <- (colSums(otu_mat_norm2, na.rm=T) != 0)
-#remove those columns with sum = 0, so removing all samples that don't have parasites
+
+#remove those columns with sum = 0
 otu_mat3 =  otu_mat2[, i]
 sort(colSums(otu_mat3))
 otu_mat_norm3 =  otu_mat_norm2[, i85_norm]
@@ -12,6 +16,7 @@ otu_mat3_35 =  otu_mat2_35[, i35]
 sort(colSums(otu_mat3_35))
 otu_mat3_35norm =  otu_mat_35_norm2[, i35_norm]
 sort(colSums(otu_mat3_35norm))
+
 #Because I removed those replicates, there are otus listed that are not represented by sequences, so I need to remove those too
 otumat4 = otu_mat3[rowSums(otu_mat3)!=0,]
 sort(rowSums(otumat4))
