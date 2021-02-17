@@ -1,0 +1,6 @@
+#To remove sequences and replace with shorter names in file, but not lose the sequence information:
+dna <- Biostrings::DNAStringSet(taxa_names(RK_otu))
+names(dna) <- taxa_names(RK_otu)
+RK_otu <- merge_phyloseq(RK_otu, dna)
+taxa_names(RK_otu) <- paste0("Seq", seq(ntaxa(RK_otu)))
+RK_otu
