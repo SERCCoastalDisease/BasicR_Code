@@ -1,0 +1,28 @@
+#using the already merged phyloseq object
+#Code from here: https://github.com/joey711/phyloseq/issues/901
+
+#Transform into relative abundances + filter to a mean threshold
+physeq2 = filter_taxa(physeq, function(x) mean(x) > 0.1, TRUE)
+physeq2
+physeq3 = transform_sample_counts(physeq2, function(x) x / sum(x) )
+physeq3
+
+#create dataframe from phyloseq object to graph samples without condensed phyla
+physeq4 <- psmelt(physeq3)
+
+#Condense low abundance taxa into an "Other" category for the barplot
+#Turn all OTUs into phylum counts
+glom <- tax_glom(physeq4, taxrank = 'phylum')
+#glom # should list # taxa as # phyla
+data <- psmelt(glom) # create dataframe from phyloseq object
+data$phylum <- as.character(data$phylum) #convert to character
+
+#simple way to rename phyla with < 1% abundance
+data$phylum[data$Abundance < 0.01] <- "< 1% abund."
+
+#plot with condensed phyla into "< 1% abund" category
+p <- ggplot(data=data, aes(x=Sample, y=Abundance, fill=phylum))
+p + geom_bar(aes(), stat="identity", position="stack") +
+scale_fill_manual(values = c("darkblue", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "lightskyblue", "darkgreen", "deeppink", "khaki2", "firebrick", "brown1", "darkorange1", "cyan1", "royalblue4", "darksalmon", "darkblue",
+"royalblue4", "dodgerblue3", "steelblue1", "lightskyblue", "darkseagreen", "darkgoldenrod1", "darkseagreen", "darkorchid", "darkolivegreen1", "brown1", "darkorange1", "cyan1", "darkgrey")) +
+theme(legend.position="bottom") + guides(fill=guide_legend(nrow=5))
