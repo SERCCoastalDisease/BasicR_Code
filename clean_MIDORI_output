@@ -1,0 +1,55 @@
+Here the function, it works directly with the dataframe you get when using fread() from the data.table package to read the raw output from Midori in .txt form.
+
+Example to use it:
+library(data.table)
+mydf <- fread("C:/Users/Paula/Dropbox/Smithsonian/StreamCode/Manuscript/RDP_Classifier_Info/RDPClassifier_Metabarcodes_Longest_otus2/20200317141235_24.6.55.40_usga_classified.txt", na.strings = c("", NA), showProgress = F, verbose = F, fill = T)
+View(cleanMidoriOutput(mydf))
+
+You could also now easily filter by probability:
+# define probability threshold for MIDORI
+th = 0.85
+# clean output
+midori.clean <- cleanMidoriOutput(midori.output) %>% dplyr::filter(phylum.prob >= th)
+  
+Function:
+cleanMidoriOutput <- function(mydf){
+  # cleans and reorder Midori output
+  #
+  # Args:
+  #   dataframe with the raw output form midori (all ranks) (loaded with fread directly from text file)
+  # Returns:
+  #   a data frame with taxonomy as columns and RDP probabilities associated to them
+  library(dplyr)
+  clean.df <- mydf %>% dplyr::mutate(species = case_when(V25 == "species" ~ V24,
+                                                         V22 == "species" ~ V21,
+                                                         V19 == "species" ~ V18,
+                                                         V16 == "species" ~ V15)) %>% 
+    dplyr::mutate(species.prob = case_when(V25 == "species" ~ V26,
+                                           V22 == "species" ~ V23,
+                                           V19 == "species" ~ V20,
+                                           V16 == "species" ~ V17)) %>%
+    dplyr::mutate(genus = case_when(V22 == "genus" ~ V21,
+                                    V19 == "genus" ~ V18,
+                                    V16 == "genus" ~ V15,
+                                    V13 == "genus" ~ V12)) %>%
+    dplyr::mutate(genus.prob = case_when(V22 == "genus" ~ V23,
+                                         V19 == "genus" ~ V20,
+                                         V16 == "genus" ~ V17,
+                                         V13 == "genus" ~ V14)) %>%
+    dplyr::mutate(family = case_when(V19 == "family" ~ V18,
+                                     V16 == "family" ~ V15,
+                                     V13 == "family" ~ V12)) %>%
+    dplyr::mutate(family.prob = case_when(V19 == "family" ~ V20,
+                                          V16 == "family" ~ V17,
+                                          V13 == "family" ~ V14)) %>%
+    dplyr::mutate(order = case_when(V16 == "order" ~ V15,
+                                    V13 == "order" ~ V12)) %>%
+    dplyr::mutate(order.prob = case_when(V16 == "order" ~ V17,
+                                         V13 == "order" ~ V14)) %>%
+    dplyr::mutate(class = case_when(V13 == "class" ~ V12)) %>%
+    dplyr::mutate(class.prob = case_when(V13 == "class" ~ V14)) %>% 
+    dplyr::mutate(phylum = V9, phylum.prob = V11) %>% 
+    dplyr::rename(OTU = V1) %>% 
+    dplyr::select(OTU, phylum, phylum.prob, class, class.prob, order, order.prob, family, family.prob, genus, genus.prob, species, species.prob)
+  return(clean.df)
+}
