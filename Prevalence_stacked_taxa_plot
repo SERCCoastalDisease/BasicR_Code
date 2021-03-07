@@ -1,3 +1,4 @@
+#Must merge these on the group that is the x axis before transforming for this to work correctly. otherwise you are just transforming the data
 DOOMALL_noneg_all = merge_samples(DOOMALL_noneg, group = "All", fun = sum)
 DOOMALL_noneg_all2 = transform_sample_counts(DOOMALL_noneg_all, function(x) x / sum(x) )
 p3 = plot_bar(DOOMALL_noneg_all2, fill = "Phylum")
