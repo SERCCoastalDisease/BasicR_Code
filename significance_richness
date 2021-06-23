@@ -1,0 +1,21 @@
+
+##################################Examine Diversity##########################################
+allgenusbin_richest2 = estimate_richness(allgenusbin, split = TRUE, measures = c("Chao1","Observed"))#estimate richness within each sample
+
+# make a data frame from the sample_data
+allgenusbin_sampledf <- data.frame(sample_data(allgenusbin))
+
+#to run the anova the dataframe must contain all the column names, so I first had to merge the dataframe I already had for this dataset with the 
+#output form the estimate richness
+allgenusbin_sampledf3 = merge(allgenusbin_sampledf2,allgenusbin_richest2, by=0) #here 0 indicates to merge on row names
+
+anova_result = aov(Observed ~ Region, data = allgenusbin_sampledf3)
+summary(anova_result)
+
+#Now to see which region is driving this diversity
+#From here:https://grunwaldlab.github.io/analysis_of_microbiome_community_data_in_r/07--diversity_stats.html
+#Need to do Tukey's Honest Significant Difference test to examine the pairwise comparisons of the means to see which means are different
+
+library(agricolae)
+tukey_result <- HSD.test(anova_result, "Region", group = TRUE)
+print(tukey_result)
