@@ -7,3 +7,8 @@ ggplot(sample_sum_df, aes(x = sum)) +
   ggtitle("Distribution of sample sequencing depth") + 
   xlab("Read counts") +
   theme(axis.title.y = element_blank())
+  
+# mean, max and min of sample read counts
+smin <- min(sample_sums(erie))
+smean <- mean(sample_sums(erie))
+smax <- max(sample_sums(erie))
